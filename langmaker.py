@@ -86,19 +86,6 @@ def generate_language(config_file):
     generate_shell_script(lang_dir, command_name, lang_name)
 
 def generate_interpreter(lib_dir, config):
-    # Convert JSON booleans to Python booleans in a new dictionary
-    python_config = {}
-    for key, value in config.items():
-        if isinstance(value, bool):
-            python_config[key] = str(value)
-        elif isinstance(value, dict):
-            python_config[key] = {k: str(v) if isinstance(v, bool) else v for k, v in value.items()}
-        else:
-            python_config[key] = value
-    
-    # Convert the Python dictionary to a string representation
-    config_str = json.dumps(python_config, indent=4)
-    
     interpreter_code = f"""
 import sys
 import json
@@ -107,32 +94,54 @@ import socket
 class {config['language_name']}SyntaxError(Exception):
     pass
 
-class Config:
-    def __init__(self):
-        self.__dict__.update({config_str})
-
-config = Config()
+# Hardcoded configuration
+LANGUAGE_NAME = "{config['language_name']}"
+FILE_EXTENSION = "{config['file_extension']}"
+COMMAND_PREFIX = "{config['command_prefix']}"
+COMMENT_PREFIX = "{config['comment_prefix']}"
+ENFORCE_UPPERCASE_COMMENTS = {config['enforce_uppercase_comments']}
+ENFORCE_UPPERCASE_CODE = {config['enforce_uppercase_code']}
+TYPE_PREFIX_INTEGER = "{config['type_prefixes']['integer']}"
+TYPE_PREFIX_FLOAT = "{config['type_prefixes']['float']}"
+TYPE_PREFIX_STRING = "{config['type_prefixes']['string']}"
+TRUE_VALUE = "{config['true_value']}"
+FALSE_VALUE = "{config['false_value']}"
+BLOCK_END = "{config['block_end']}"
 
 # Lexer
 def lexer(code):
     tokens = []
     lines = code.split('\\n')
     for line_number, line in enumerate(lines, 1):
-        if config.comment_prefix in line:
-            comment_start = line.index(config.comment_prefix)
-            if config.enforce_uppercase_comments and any(c.islower() for c in line[comment_start:]):
+        if COMMENT_PREFIX in line:
+            comment_start = line.index(COMMENT_PREFIX)
+            if ENFORCE_UPPERCASE_COMMENTS and any(c.islower() for c in line[comment_start:]):
                 raise {config['language_name']}SyntaxError(f"Syntax Error on line {{line_number}}: Comments must be in all caps")
             line = line[:comment_start].strip()
         if not line:
             continue
         line_tokens = []
         current = ''
+        in_string = False
         for char in line:
-            if char.isspace():
+            if char == '"' and not in_string:
                 if current:
                     line_tokens.append(current)
                     current = ''
-            elif char in '+-*/()=:':
+                in_string = True
+                current += char
+            elif char == '"' and in_string:
+                current += char
+                line_tokens.append(current)
+                current = ''
+                in_string = False
+            elif in_string:
+                current += char
+            elif char.isspace():
+                if current:
+                    line_tokens.append(current)
+                    current = ''
+            elif char in '+-*/()=:,':
                 if current:
                     line_tokens.append(current)
                     current = ''
@@ -180,10 +189,21 @@ class FunctionCall(AST):
         self.name = name
         self.args = args
 
+class IfStatement(AST):
+    def __init__(self, condition, if_body, else_body=None):
+        self.condition = condition
+        self.if_body = if_body
+        self.else_body = else_body
+
+class WhileLoop(AST):
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
 def parse(tokens):
     def parse_expression():
         result = parse_term()
-        while len(tokens) > 0 and tokens[0] in '+-':
+        while tokens and tokens[0] in '+-':
             op = tokens.pop(0)
             right = parse_term()
             result = BinOp(result, op, right)
@@ -191,57 +211,117 @@ def parse(tokens):
 
     def parse_term():
         result = parse_factor()
-        while len(tokens) > 0 and tokens[0] in '*/':
+        while tokens and tokens[0] in '*/':
             op = tokens.pop(0)
             right = parse_factor()
             result = BinOp(result, op, right)
         return result
 
     def parse_factor():
+        if not tokens:
+            raise {config['language_name']}SyntaxError("Unexpected end of input")
         if tokens[0] == '(':
             tokens.pop(0)  # Remove '('
             result = parse_expression()
-            tokens.pop(0)  # Remove ')'
+            if not tokens or tokens.pop(0) != ')':
+                raise {config['language_name']}SyntaxError("Expected closing parenthesis")
             return result
-        elif tokens[0].startswith(config.command_prefix):
+        elif tokens[0].startswith(COMMAND_PREFIX) or tokens[0] in [TYPE_PREFIX_INTEGER, TYPE_PREFIX_FLOAT, TYPE_PREFIX_STRING]:
             return parse_command()
-        elif tokens[0] in [config.true_value, config.false_value]:
-            return BooleanLiteral(tokens.pop(0) == config.true_value)
+        elif tokens[0] in [TRUE_VALUE, FALSE_VALUE]:
+            return BooleanLiteral(tokens.pop(0) == TRUE_VALUE)
+        elif tokens[0].startswith('"') and tokens[0].endswith('"'):
+            return String(tokens.pop(0)[1:-1])  # Remove quotes
         elif tokens[0].isalpha():
             return parse_variable_or_function()
         else:
-            return Number(float(tokens.pop(0)))
+            try:
+                return Number(float(tokens.pop(0)))
+            except ValueError:
+                raise {config['language_name']}SyntaxError(f"Unexpected token: {{tokens[0]}}")
+
+    def parse_function_call(name):
+        args = []
+        if tokens and tokens[0] == '(':
+            tokens.pop(0)  # Remove '('
+            while tokens and tokens[0] != ')':
+                args.append(parse_expression())
+                if tokens and tokens[0] == ',':
+                    tokens.pop(0)
+            if not tokens or tokens.pop(0) != ')':
+                raise {config['language_name']}SyntaxError(f"Expected closing parenthesis in function call to {{name}}")
+        return FunctionCall(name, args)
 
     def parse_command():
         token = tokens.pop(0)
-        if token == config.type_prefixes.integer:
-            return Number(int(tokens.pop(0)))
-        elif token == config.type_prefixes.float:
-            return Number(float(tokens.pop(0)))
-        elif token == config.type_prefixes.string:
-            return String(tokens.pop(0).strip('"'))
+        if token in [TYPE_PREFIX_INTEGER, TYPE_PREFIX_FLOAT, TYPE_PREFIX_STRING]:
+            if not tokens:
+                raise {config['language_name']}SyntaxError(f"Expected value after {{token}}")
+            value = tokens.pop(0)
+            if token == TYPE_PREFIX_INTEGER:
+                return Number(int(value))
+            elif token == TYPE_PREFIX_FLOAT:
+                return Number(float(value))
+            else:  # TYPE_PREFIX_STRING
+                return String(value.strip('"'))
+        elif token.startswith(COMMAND_PREFIX):
+            return parse_function_call(token)
         else:
-            raise ValueError(f"Unknown {{config.command_prefix}} command: {{token}}")
+            raise {config['language_name']}SyntaxError(f"Unknown command: {{token}}")
 
     def parse_variable_or_function():
         name = tokens.pop(0)
-        if len(tokens) > 0 and tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            args = []
-            while len(tokens) > 0 and tokens[0] != ')':
-                args.append(parse_expression())
-                if tokens[0] == ',':
-                    tokens.pop(0)
-            tokens.pop(0)  # Remove ')'
-            return FunctionCall(name, args)
+        if tokens and tokens[0] == '(':
+            return parse_function_call(name)
         return Variable(name)
 
+    def parse_if_statement():
+        tokens.pop(0)  # Remove IF
+        condition = parse_expression()
+        if not tokens or tokens.pop(0) != ':':
+            raise {config['language_name']}SyntaxError("Expected ':' after if condition")
+        if_body = []
+        while tokens and tokens[0] != f"{{COMMAND_PREFIX}}ELSE" and tokens[0] != BLOCK_END:
+            if_body.append(parse_statement())
+        else_body = None
+        if tokens and tokens[0] == f"{{COMMAND_PREFIX}}ELSE":
+            tokens.pop(0)  # Remove ELSE
+            if not tokens or tokens.pop(0) != ':':
+                raise {config['language_name']}SyntaxError("Expected ':' after else")
+            else_body = []
+            while tokens and tokens[0] != BLOCK_END:
+                else_body.append(parse_statement())
+        if not tokens or tokens.pop(0) != BLOCK_END:
+            raise {config['language_name']}SyntaxError(f"Expected '{{BLOCK_END}}' at the end of if statement")
+        return IfStatement(condition, if_body, else_body)
+
+    def parse_while_loop():
+        tokens.pop(0)  # Remove WHILE
+        condition = parse_expression()
+        if not tokens or tokens.pop(0) != ':':
+            raise {config['language_name']}SyntaxError("Expected ':' after while condition")
+        body = []
+        while tokens and tokens[0] != BLOCK_END:
+            body.append(parse_statement())
+        if not tokens or tokens.pop(0) != BLOCK_END:
+            raise {config['language_name']}SyntaxError(f"Expected '{{BLOCK_END}}' at the end of while loop")
+        return WhileLoop(condition, body)
+
     def parse_statement():
+        if not tokens:
+            raise {config['language_name']}SyntaxError("Unexpected end of input")
         if len(tokens) >= 3 and tokens[1] == '=':
             name = tokens.pop(0)
             tokens.pop(0)  # Remove '='
             value = parse_expression()
             return Assignment(name, value)
+        elif tokens[0].startswith(COMMAND_PREFIX):
+            if tokens[0] == f"{{COMMAND_PREFIX}}IF":
+                return parse_if_statement()
+            elif tokens[0] == f"{{COMMAND_PREFIX}}WHILE":
+                return parse_while_loop()
+            else:
+                return parse_command()
         else:
             return parse_expression()
 
@@ -254,6 +334,7 @@ def parse(tokens):
 class Interpreter:
     def __init__(self):
         self.variables = {{}}
+        self.sockets = {{}}
 
     def visit(self, node):
         method_name = f'visit_{{type(node).__name__}}'
@@ -282,7 +363,9 @@ class Interpreter:
             return left / right
 
     def visit_Variable(self, node):
-        return self.variables.get(node.name, 0)
+        if node.name not in self.variables:
+            raise NameError(f"Variable '{{node.name}}' is not defined")
+        return self.variables[node.name]
 
     def visit_Assignment(self, node):
         value = self.visit(node.value)
@@ -290,19 +373,52 @@ class Interpreter:
         return value
 
     def visit_FunctionCall(self, node):
-        if node.name == f'{{config.command_prefix}}PRINT':
-            args = [self.visit(arg) for arg in node.args]
+        if node.name == f'{{COMMAND_PREFIX}}PRINT':
+            args = [str(self.visit(arg)) for arg in node.args]
             print(*args)
-        elif node.name == f'{{config.command_prefix}}SHOUT':
+        elif node.name == f'{{COMMAND_PREFIX}}SHOUT':
             if len(node.args) != 1:
-                raise ValueError(f"{{config.command_prefix}}SHOUT function expects exactly one argument")
+                raise ValueError(f"{{COMMAND_PREFIX}}SHOUT function expects exactly one argument")
             arg = self.visit(node.args[0])
             return str(arg).upper()
+        elif node.name == f'{{COMMAND_PREFIX}}SOCKET':
+            socket_name = self.visit(node.args[0])
+            self.sockets[socket_name] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            return socket_name
+        elif node.name == f'{{COMMAND_PREFIX}}BIND':
+            socket_name = self.visit(node.args[0])
+            port = self.visit(node.args[1])
+            self.sockets[socket_name].bind(('', port))
+        elif node.name == f'{{COMMAND_PREFIX}}LISTEN':
+            socket_name = self.visit(node.args[0])
+            backlog = self.visit(node.args[1])
+            self.sockets[socket_name].listen(backlog)
+        elif node.name == f'{{COMMAND_PREFIX}}ACCEPT':
+            socket_name = self.visit(node.args[0])
+            conn, _ = self.sockets[socket_name].accept()
+            return conn
+        elif node.name == f'{{COMMAND_PREFIX}}SEND':
+            conn = self.visit(node.args[0])
+            data = str(self.visit(node.args[1])).encode()
+            conn.send(data)
         else:
             raise ValueError(f"Unknown function: {{node.name}}")
 
+    def visit_IfStatement(self, node):
+        if self.visit(node.condition):
+            for statement in node.if_body:
+                self.visit(statement)
+        elif node.else_body:
+            for statement in node.else_body:
+                self.visit(statement)
+
+    def visit_WhileLoop(self, node):
+        while self.visit(node.condition):
+            for statement in node.body:
+                self.visit(statement)
+
 def run(code):
-    if config.enforce_uppercase_code:
+    if ENFORCE_UPPERCASE_CODE:
         code = code.upper()
     try:
         tokens = lexer(code)
@@ -311,528 +427,23 @@ def run(code):
         for statement in ast:
             interpreter.visit(statement)
     except {config['language_name']}SyntaxError as e:
-        print(f"{{config.command_prefix}}PY ERROR: {{str(e).upper()}}")
+        print(f"{{COMMAND_PREFIX}}PY ERROR: {{str(e).upper()}}")
         sys.exit(1)
 
 def run_file(filename):
-    if not filename.endswith(config.file_extension):
-        raise ValueError(f"Only {{config.file_extension}} files can be run")
+    if not filename.endswith(FILE_EXTENSION):
+        raise ValueError(f"Only {{FILE_EXTENSION}} files can be run")
     with open(filename, 'r') as file:
         code = file.read()
     return run(code)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print(f"Usage: python {{config.language_name.lower()}}.py <filename{{config.file_extension}}>")
+        print(f"Usage: python {{LANGUAGE_NAME.lower()}}.py <filename{{FILE_EXTENSION}}>")
         sys.exit(1)
     
     try:
         run_file(sys.argv[1])
-    except Exception as e:
-        print(f"ERROR: {{str(e).upper()}}")
-        sys.exit(1)
-"""
-    with open(os.path.join(lib_dir, f"{config['language_name'].lower()}.py"), 'w') as f:
-        f.write(interpreter_code)
-    # Convert JSON booleans to Python booleans in a new dictionary
-    python_config = {}
-    for key, value in config.items():
-        if isinstance(value, bool):
-            python_config[key] = str(value)
-        elif isinstance(value, dict):
-            python_config[key] = {k: str(v) if isinstance(v, bool) else v for k, v in value.items()}
-        else:
-            python_config[key] = value
-    
-    # Convert the Python dictionary to a string representation
-    config_str = json.dumps(python_config, indent=4)
-    
-    interpreter_code = f"""
-import sys
-import json
-import socket
-
-class {config['language_name']}SyntaxError(Exception):
-    pass
-
-class Config:
-    def __init__(self):
-        self.__dict__.update({config_str})
-
-config = Config()
-
-# Lexer
-def lexer(code):
-    tokens = []
-    lines = code.split('\\n')
-    for line_number, line in enumerate(lines, 1):
-        if config.comment_prefix in line:
-            comment_start = line.index(config.comment_prefix)
-            if config.enforce_uppercase_comments and any(c.islower() for c in line[comment_start:]):
-                raise {config['language_name']}SyntaxError(f"Syntax Error on line {{line_number}}: Comments must be in all caps")
-            line = line[:comment_start].strip()
-        if not line:
-            continue
-        line_tokens = []
-        current = ''
-        for char in line:
-            if char.isspace():
-                if current:
-                    line_tokens.append(current)
-                    current = ''
-            elif char in '+-*/()=:':
-                if current:
-                    line_tokens.append(current)
-                    current = ''
-                line_tokens.append(char)
-            else:
-                current += char
-        if current:
-            line_tokens.append(current)
-        tokens.extend(line_tokens)
-    return tokens
-
-# Parser
-class AST:
-    pass
-
-class Number(AST):
-    def __init__(self, value):
-        self.value = value
-
-class String(AST):
-    def __init__(self, value):
-        self.value = value
-
-class BooleanLiteral(AST):
-    def __init__(self, value):
-        self.value = value
-
-class BinOp(AST):
-    def __init__(self, left, op, right):
-        self.left = left
-        self.op = op
-        self.right = right
-
-class Variable(AST):
-    def __init__(self, name):
-        self.name = name
-
-class Assignment(AST):
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-class FunctionCall(AST):
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-def parse(tokens):
-    def parse_expression():
-        result = parse_term()
-        while len(tokens) > 0 and tokens[0] in '+-':
-            op = tokens.pop(0)
-            right = parse_term()
-            result = BinOp(result, op, right)
-        return result
-
-    def parse_term():
-        result = parse_factor()
-        while len(tokens) > 0 and tokens[0] in '*/':
-            op = tokens.pop(0)
-            right = parse_factor()
-            result = BinOp(result, op, right)
-        return result
-
-    def parse_factor():
-        if tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            result = parse_expression()
-            tokens.pop(0)  # Remove ')'
-            return result
-        elif tokens[0].startswith(config.command_prefix):
-            return parse_command()
-        elif tokens[0] in [config.true_value, config.false_value]:
-            return BooleanLiteral(tokens.pop(0) == config.true_value)
-        elif tokens[0].isalpha():
-            return parse_variable_or_function()
-        else:
-            return Number(float(tokens.pop(0)))
-
-    def parse_command():
-        token = tokens.pop(0)
-        if token in config.type_prefixes.values():
-            return parse_type(token)
-        else:
-            raise ValueError(f"Unknown {{config.command_prefix}} command: {{token}}")
-
-    def parse_type(type_token):
-        if type_token == config.type_prefixes['integer']:
-            return Number(int(tokens.pop(0)))
-        elif type_token == config.type_prefixes['float']:
-            return Number(float(tokens.pop(0)))
-        elif type_token == config.type_prefixes['string']:
-            return String(tokens.pop(0).strip('"'))
-
-    def parse_variable_or_function():
-        name = tokens.pop(0)
-        if len(tokens) > 0 and tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            args = []
-            while len(tokens) > 0 and tokens[0] != ')':
-                args.append(parse_expression())
-                if tokens[0] == ',':
-                    tokens.pop(0)
-            tokens.pop(0)  # Remove ')'
-            return FunctionCall(name, args)
-        return Variable(name)
-
-    def parse_statement():
-        if len(tokens) >= 3 and tokens[1] == '=':
-            name = tokens.pop(0)
-            tokens.pop(0)  # Remove '='
-            value = parse_expression()
-            return Assignment(name, value)
-        else:
-            return parse_expression()
-
-    statements = []
-    while tokens:
-        statements.append(parse_statement())
-    return statements
-
-# Interpreter
-class Interpreter:
-    def __init__(self):
-        self.variables = {{}}
-
-    def visit(self, node):
-        method_name = f'visit_{{type(node).__name__}}'
-        method = getattr(self, method_name)
-        return method(node)
-
-    def visit_Number(self, node):
-        return node.value
-
-    def visit_String(self, node):
-        return node.value
-
-    def visit_BooleanLiteral(self, node):
-        return node.value
-
-    def visit_BinOp(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        if node.op == '+':
-            return left + right
-        elif node.op == '-':
-            return left - right
-        elif node.op == '*':
-            return left * right
-        elif node.op == '/':
-            return left / right
-
-    def visit_Variable(self, node):
-        return self.variables.get(node.name, 0)
-
-    def visit_Assignment(self, node):
-        value = self.visit(node.value)
-        self.variables[node.name] = value
-        return value
-
-    def visit_FunctionCall(self, node):
-        if node.name == f'{{config.command_prefix}}PRINT':
-            args = [self.visit(arg) for arg in node.args]
-            print(*args)
-        elif node.name == f'{{config.command_prefix}}SHOUT':
-            if len(node.args) != 1:
-                raise ValueError(f"{{config.command_prefix}}SHOUT function expects exactly one argument")
-            arg = self.visit(node.args[0])
-            return str(arg).upper()
-        else:
-            raise ValueError(f"Unknown function: {{node.name}}")
-
-def run(code):
-    if config.enforce_uppercase_code:
-        code = code.upper()
-    try:
-        tokens = lexer(code)
-        ast = parse(tokens)
-        interpreter = Interpreter()
-        for statement in ast:
-            interpreter.visit(statement)
-    except {config['language_name']}SyntaxError as e:
-        print(f"{{config.command_prefix}}PY ERROR: {{str(e).upper()}}")
-        sys.exit(1)
-
-def run_file(filename):
-    if not filename.endswith(config.file_extension):
-        raise ValueError(f"Only {{config.file_extension}} files can be run")
-    with open(filename, 'r') as file:
-        code = file.read()
-    return run(code)
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: python {{config.language_name.lower()}}.py <filename{{config.file_extension}}>")
-        sys.exit(1)
-    
-    try:
-        run_file(sys.argv[1])
-    except Exception as e:
-        print(f"ERROR: {{str(e).upper()}}")
-        sys.exit(1)
-"""
-    with open(os.path.join(lib_dir, f"{config['language_name'].lower()}.py"), 'w') as f:
-        f.write(interpreter_code)
-    # Convert JSON booleans to Python booleans in a new dictionary
-    python_config = {}
-    for key, value in config.items():
-        if isinstance(value, bool):
-            python_config[key] = str(value)
-        elif isinstance(value, dict):
-            python_config[key] = {k: str(v) if isinstance(v, bool) else v for k, v in value.items()}
-        else:
-            python_config[key] = value
-    
-    # Convert the Python dictionary to a string representation
-    config_str = json.dumps(python_config, indent=4)
-    
-    interpreter_code = f"""
-import sys
-import json
-import socket
-
-class {config['language_name']}SyntaxError(Exception):
-    pass
-
-class Config:
-    def __init__(self, config_file=None):
-        self.__dict__.update({config_str})
-
-# Lexer
-def lexer(code, config):
-    tokens = []
-    lines = code.split('\\n')
-    for line_number, line in enumerate(lines, 1):
-        if config['comment_prefix'] in line:
-            comment_start = line.index(config['comment_prefix'])
-            if config['enforce_uppercase_comments'] and any(c.islower() for c in line[comment_start:]):
-                raise {config['language_name']}SyntaxError(f"Syntax Error on line {{line_number}}: Comments must be in all caps")
-            line = line[:comment_start].strip()
-        if not line:
-            continue
-        line_tokens = []
-        current = ''
-        for char in line:
-            if char.isspace():
-                if current:
-                    line_tokens.append(current)
-                    current = ''
-            elif char in '+-*/()=:':
-                if current:
-                    line_tokens.append(current)
-                    current = ''
-                line_tokens.append(char)
-            else:
-                current += char
-        if current:
-            line_tokens.append(current)
-        tokens.extend(line_tokens)
-    return tokens
-
-# Parser
-class AST:
-    pass
-
-class Number(AST):
-    def __init__(self, value):
-        self.value = value
-
-class String(AST):
-    def __init__(self, value):
-        self.value = value
-
-class BooleanLiteral(AST):
-    def __init__(self, value):
-        self.value = value
-
-class BinOp(AST):
-    def __init__(self, left, op, right):
-        self.left = left
-        self.op = op
-        self.right = right
-
-class Variable(AST):
-    def __init__(self, name):
-        self.name = name
-
-class Assignment(AST):
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-class FunctionCall(AST):
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-def parse(tokens, config):
-    def parse_expression():
-        result = parse_term()
-        while len(tokens) > 0 and tokens[0] in '+-':
-            op = tokens.pop(0)
-            right = parse_term()
-            result = BinOp(result, op, right)
-        return result
-
-    def parse_term():
-        result = parse_factor()
-        while len(tokens) > 0 and tokens[0] in '*/':
-            op = tokens.pop(0)
-            right = parse_factor()
-            result = BinOp(result, op, right)
-        return result
-
-    def parse_factor():
-        if tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            result = parse_expression()
-            tokens.pop(0)  # Remove ')'
-            return result
-        elif tokens[0].startswith(config['command_prefix']):
-            return parse_command()
-        elif tokens[0] in [config['true_value'], config['false_value']]:
-            return BooleanLiteral(tokens.pop(0) == config['true_value'])
-        elif tokens[0].isalpha():
-            return parse_variable_or_function()
-        else:
-            return Number(float(tokens.pop(0)))
-
-    def parse_command():
-        token = tokens.pop(0)
-        if token in config['type_prefixes'].values():
-            return parse_type(token)
-        else:
-            raise ValueError(f"Unknown {{config['command_prefix']}} command: {{token}}")
-
-    def parse_type(type_token):
-        if type_token == config['type_prefixes']['integer']:
-            return Number(int(tokens.pop(0)))
-        elif type_token == config['type_prefixes']['float']:
-            return Number(float(tokens.pop(0)))
-        elif type_token == config['type_prefixes']['string']:
-            return String(tokens.pop(0).strip('"'))
-
-    def parse_variable_or_function():
-        name = tokens.pop(0)
-        if len(tokens) > 0 and tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            args = []
-            while len(tokens) > 0 and tokens[0] != ')':
-                args.append(parse_expression())
-                if tokens[0] == ',':
-                    tokens.pop(0)
-            tokens.pop(0)  # Remove ')'
-            return FunctionCall(name, args)
-        return Variable(name)
-
-    def parse_statement():
-        if len(tokens) >= 3 and tokens[1] == '=':
-            name = tokens.pop(0)
-            tokens.pop(0)  # Remove '='
-            value = parse_expression()
-            return Assignment(name, value)
-        else:
-            return parse_expression()
-
-    statements = []
-    while tokens:
-        statements.append(parse_statement())
-    return statements
-
-# Interpreter
-class Interpreter:
-    def __init__(self, config):
-        self.variables = {{}}
-        self.config = config
-
-    def visit(self, node):
-        method_name = f'visit_{{type(node).__name__}}'
-        method = getattr(self, method_name)
-        return method(node)
-
-    def visit_Number(self, node):
-        return node.value
-
-    def visit_String(self, node):
-        return node.value
-
-    def visit_BooleanLiteral(self, node):
-        return node.value
-
-    def visit_BinOp(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        if node.op == '+':
-            return left + right
-        elif node.op == '-':
-            return left - right
-        elif node.op == '*':
-            return left * right
-        elif node.op == '/':
-            return left / right
-
-    def visit_Variable(self, node):
-        return self.variables.get(node.name, 0)
-
-    def visit_Assignment(self, node):
-        value = self.visit(node.value)
-        self.variables[node.name] = value
-        return value
-
-    def visit_FunctionCall(self, node):
-        if node.name == f'{{config["command_prefix"]}}PRINT':
-            args = [self.visit(arg) for arg in node.args]
-            print(*args)
-        elif node.name == f'{{config["command_prefix"]}}SHOUT':
-            if len(node.args) != 1:
-                raise ValueError(f"{{config['command_prefix']}}SHOUT function expects exactly one argument")
-            arg = self.visit(node.args[0])
-            return str(arg).upper()
-        else:
-            raise ValueError(f"Unknown function: {{node.name}}")
-
-def run(code, config):
-    if config.enforce_uppercase_code:
-        code = code.upper()
-    try:
-        tokens = lexer(code, config)
-        ast = parse(tokens, config)
-        interpreter = Interpreter(config)
-        for statement in ast:
-            interpreter.visit(statement)
-    except {config['language_name']}SyntaxError as e:
-        print(f"{{config['command_prefix']}}PY ERROR: {{str(e).upper()}}")
-        sys.exit(1)
-
-def run_file(filename, config):
-    if not filename.endswith(config['file_extension']):
-        raise ValueError(f"Only {{config['file_extension']}} files can be run")
-    with open(filename, 'r') as file:
-        code = file.read()
-    return run(code, config)
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: python {{config['language_name'].lower()}}.py <filename{{config['file_extension']}}>")
-        sys.exit(1)
-    
-    config = Config()
-    
-    try:
-        run_file(sys.argv[1], config)
     except Exception as e:
         print(f"ERROR: {{str(e).upper()}}")
         sys.exit(1)
@@ -923,14 +534,16 @@ SERVERSOCKET = {config['command_prefix']}SOCKET({config['type_prefixes']['string
 
 {config['command_prefix']}WHILE {config['true_value']}:
     {config['command_prefix']}PRINT({config['type_prefixes']['string']} "WAITING FOR CONNECTION...")
-    CONNECTION, ADDRESS = {config['command_prefix']}ACCEPT(SERVERSOCKET)
-    {config['command_prefix']}PRINT({config['command_prefix']}SHOUT({config['type_prefixes']['string']} "CONNECTED TO:"), ADDRESS)
+    CONNECTION = {config['command_prefix']}ACCEPT(SERVERSOCKET)
+    {config['command_prefix']}PRINT({config['command_prefix']}SHOUT({config['type_prefixes']['string']} "CONNECTED"))
     
     RESPONSE = {config['command_prefix']}SHOUT({config['type_prefixes']['string']} "HELLO")
     {config['command_prefix']}SEND(CONNECTION, RESPONSE)
     
-    CONNECTION.CLOSE()
+    {config['command_prefix']}PRINT({config['type_prefixes']['string']} "CLOSING CONNECTION")
 {config['block_end']}
+
+{config['command_prefix']}PRINT({config['type_prefixes']['string']} "SERVER CLOSED")
 """
     with open(os.path.join(lang_dir, f"server{config['file_extension']}"), 'w') as f:
         f.write(server_example)
@@ -942,17 +555,17 @@ SERVERSOCKET = {config['command_prefix']}SOCKET({config['type_prefixes']['string
 A = {config['true_value']}
 B = {config['false_value']}
 
-{config['command_prefix']}PRINT({config['type_prefixes']['string']} "A IS TRUE:", A)
-{config['command_prefix']}PRINT({config['type_prefixes']['string']} "B IS FALSE:", B)
+{config['command_prefix']}PRINT({config['type_prefixes']['string']} "A IS {config['true_value']}:", A)
+{config['command_prefix']}PRINT({config['type_prefixes']['string']} "B IS {config['false_value']}:", B)
 
 {config['command_prefix']}IF A:
-    {config['command_prefix']}PRINT({config['type_prefixes']['string']} "A IS TRUE")
+    {config['command_prefix']}PRINT({config['type_prefixes']['string']} "A IS {config['true_value']}")
 {config['block_end']}
 
 {config['command_prefix']}IF B:
     {config['command_prefix']}PRINT({config['type_prefixes']['string']} "THIS WILL NOT BE PRINTED")
 {config['command_prefix']}ELSE:
-    {config['command_prefix']}PRINT({config['type_prefixes']['string']} "B IS FALSE")
+    {config['command_prefix']}PRINT({config['type_prefixes']['string']} "B IS {config['false_value']}")
 {config['block_end']}
 """
     with open(os.path.join(lang_dir, f"boolean_logic{config['file_extension']}"), 'w') as f:
