@@ -1,7 +1,7 @@
 {
   "language_name": "Matthew",
   "file_extension": ".bntz",
-  "command_name": "bhavexec",
+  "command_name": "benitexec",
   "comment_prefix": "MatthewComment",
   "command_prefix": "Matthew",
   "case_sensitive": true,

@@ -1,18 +1,18 @@
 {
   "language_name": "PENGYUE",
-  "file_extension": ".PENGYUE",
-  "command_name": "PENGYUEexec",
-  "comment_prefix": "PENGYUECOMMENT",
-  "command_prefix": "PENGYUE",
+  "file_extension": ".pengyue",
+  "command_name": "pengexec",
+  "comment_prefix": "PENGCOMMENT",
+  "command_prefix": "PENG",
   "case_sensitive": false,
   "enforce_uppercase_comments": true,
-  "enforce_uppercase_code": true,
+  "enforce_uppercase_code": false,
   "type_prefixes": {
-    "integer": "PENGYUEINT",
-    "float": "PENGYUEFLOAT",
-    "string": "PENGYUESTRING"
+    "integer": "PENGINT",
+    "float": "PENGFLOAT",
+    "string": "PENGSTRING"
   },
-  "block_end": "PENGYUEEND",
-  "true_value": "YEYS",
-  "false_value": "NAOW"
+  "block_end": "PENGEND",
+  "true_value": "TRUE",
+  "false_value": "FALSE"
 }
