@@ -11,8 +11,8 @@ SHARIF is a custom programming language created to honor friendship.
 - Case-insensitive
 - Enforces uppercase comments
 - Enforces uppercase code
-- True value: YAS
-- False value: NOO
+- True value: JUICYBAYBEE
+- False value: OTHERFRIENDS
 
 ## Running SHARIF Programs
 
