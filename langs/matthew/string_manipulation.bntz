@@ -1,0 +1,7 @@
+
+MatthewComment String manipulation example
+
+NAME = MatthewString "FRIEND"
+GREETING = MatthewSHOUT(MatthewString "Hello, ")
+FULL_GREETING = GREETING + NAME
+MatthewPRINT(FULL_GREETING)

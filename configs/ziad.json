@@ -1,0 +1,18 @@
+{
+  "language_name": "ZIAD",
+  "file_extension": ".ziad",
+  "command_name": "ziadrun",
+  "comment_prefix": "ZIADCOMMENT",
+  "command_prefix": "ZIAD",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "ZIADINT",
+    "float": "ZIADFLOAT",
+    "string": "ZIADSTRING"
+  },
+  "block_end": "ZIADEND",
+  "true_value": "HELLYEAH",
+  "false_value": "NOWAY"
+}

@@ -1,0 +1,7 @@
+
+EmmanComment String manipulation example
+
+NAME = EmmanString "FRIEND"
+GREETING = EmmanSHOUT(EmmanString "Hello, ")
+FULL_GREETING = GREETING + NAME
+EmmanPRINT(FULL_GREETING)

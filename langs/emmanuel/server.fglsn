@@ -1,0 +1,21 @@
+
+EmmanComment Server example
+
+SERVERSOCKET = EmmanSOCKET(EmmanString "SERVER")
+EmmanBIND(SERVERSOCKET, EmmanInt 1001)
+EmmanLISTEN(SERVERSOCKET, EmmanInt 1)
+
+EmmanPRINT(EmmanString "SERVER LISTENING ON PORT 1001")
+
+EmmanWHILE yes:
+    EmmanPRINT(EmmanString "WAITING FOR CONNECTION...")
+    CONNECTION = EmmanACCEPT(SERVERSOCKET)
+    EmmanPRINT(EmmanSHOUT(EmmanString "CONNECTED"))
+    
+    RESPONSE = EmmanSHOUT(EmmanString "HELLO")
+    EmmanSEND(CONNECTION, RESPONSE)
+    
+    EmmanPRINT(EmmanString "CLOSING CONNECTION")
+EmmanEnd
+
+EmmanPRINT(EmmanString "SERVER CLOSED")

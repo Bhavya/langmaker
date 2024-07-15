@@ -1,0 +1,15 @@
+
+EmmanComment Arithmetic example
+
+A = EmmanInt 10
+B = EmmanInt 5
+
+SUM = A + B
+DIFFERENCE = A - B
+PRODUCT = A * B
+QUOTIENT = A / B
+
+EmmanPRINT(EmmanString "SUM:", SUM)
+EmmanPRINT(EmmanString "DIFFERENCE:", DIFFERENCE)
+EmmanPRINT(EmmanString "PRODUCT:", PRODUCT)
+EmmanPRINT(EmmanString "QUOTIENT:", QUOTIENT)

@@ -1,0 +1,18 @@
+{
+  "language_name": "PENGYUE",
+  "file_extension": ".PENGYUE",
+  "command_name": "PENGYUEexec",
+  "comment_prefix": "PENGYUECOMMENT",
+  "command_prefix": "PENGYUE",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "PENGYUEINT",
+    "float": "PENGYUEFLOAT",
+    "string": "PENGYUESTRING"
+  },
+  "block_end": "PENGYUEEND",
+  "true_value": "YEYS",
+  "false_value": "NAOW"
+}

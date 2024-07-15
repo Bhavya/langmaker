@@ -1,0 +1,18 @@
+
+EmmanComment Boolean logic example
+
+A = yes
+B = no
+
+EmmanPRINT(EmmanString "A IS yes:", A)
+EmmanPRINT(EmmanString "B IS no:", B)
+
+EmmanIF A:
+    EmmanPRINT(EmmanString "A IS yes")
+EmmanEnd
+
+EmmanIF B:
+    EmmanPRINT(EmmanString "THIS WILL NOT BE PRINTED")
+EmmanELSE:
+    EmmanPRINT(EmmanString "B IS no")
+EmmanEnd

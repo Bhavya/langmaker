@@ -1,0 +1,18 @@
+{
+  "language_name": "MATT",
+  "file_extension": ".selby",
+  "command_name": "taylorun",
+  "comment_prefix": "MATTEXCLAIM",
+  "command_prefix": "MATT",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "MATTINT",
+    "float": "MATTFLOAT",
+    "string": "MATTSTRING"
+  },
+  "block_end": "MATTEND",
+  "true_value": "YES",
+  "false_value": "NO"
+}

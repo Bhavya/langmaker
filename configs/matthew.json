@@ -1,0 +1,18 @@
+{
+  "language_name": "Matthew",
+  "file_extension": ".bntz",
+  "command_name": "bhavexec",
+  "comment_prefix": "MatthewComment",
+  "command_prefix": "Matthew",
+  "case_sensitive": true,
+  "enforce_uppercase_comments": false,
+  "enforce_uppercase_code": false,
+  "type_prefixes": {
+    "integer": "MatthewNum",
+    "float": "MatthewFloat",
+    "string": "MatthewString"
+  },
+  "block_end": "MatthewEnd",
+  "true_value": "facts",
+  "false_value": "cap"
+}

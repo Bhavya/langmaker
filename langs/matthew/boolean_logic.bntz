@@ -1,0 +1,18 @@
+
+MatthewComment Boolean logic example
+
+A = facts
+B = cap
+
+MatthewPRINT(MatthewString "A IS facts:", A)
+MatthewPRINT(MatthewString "B IS cap:", B)
+
+MatthewIF A:
+    MatthewPRINT(MatthewString "A IS facts")
+MatthewEnd
+
+MatthewIF B:
+    MatthewPRINT(MatthewString "THIS WILL NOT BE PRINTED")
+MatthewELSE:
+    MatthewPRINT(MatthewString "B IS cap")
+MatthewEnd

@@ -1,0 +1,18 @@
+{
+  "language_name": "SOARES",
+  "file_extension": ".soares",
+  "command_name": "soaresrun",
+  "comment_prefix": "SOARESAY",
+  "command_prefix": "SOARES",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "SOARESNUM",
+    "float": "SOARESFLOAT",
+    "string": "SOARESSTRING"
+  },
+  "block_end": "SOARESDONE",
+  "true_value": "YEEE",
+  "false_value": "NAWWW"
+}

@@ -1,0 +1,18 @@
+{
+  "language_name": "HIREN",
+  "file_extension": ".bigh",
+  "command_name": "hirun",
+  "comment_prefix": "HIRENSAY",
+  "command_prefix": "HIREN",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "HIRENUM",
+    "float": "HIRENFLOAT",
+    "string": "HIRENSTRING"
+  },
+  "block_end": "HIREND",
+  "true_value": "YES",
+  "false_value": "NO"
+}
