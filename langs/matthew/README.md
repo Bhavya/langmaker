@@ -16,10 +16,10 @@ Matthew is a custom programming language created to honor friendship.
 
 ## Running Matthew Programs
 
-Use the `bhavexec` command followed by your Matthew file:
+Use the `benitexec` command followed by your Matthew file:
 
 ```
-./bhavexec your_program.bntz
+./benitexec your_program.bntz
 ```
 
 ## Examples
