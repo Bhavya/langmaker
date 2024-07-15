@@ -1,0 +1,18 @@
+
+PopoSay Boolean logic example
+
+A = yeys
+B = naow
+
+PopoPRINT(PopoString "A IS yeys:", A)
+PopoPRINT(PopoString "B IS naow:", B)
+
+PopoIF A:
+    PopoPRINT(PopoString "A IS yeys")
+PopoDone
+
+PopoIF B:
+    PopoPRINT(PopoString "THIS WILL NOT BE PRINTED")
+PopoELSE:
+    PopoPRINT(PopoString "B IS naow")
+PopoDone

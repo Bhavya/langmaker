@@ -1,0 +1,21 @@
+
+PopoSay Server example
+
+SERVERSOCKET = PopoSOCKET(PopoString "SERVER")
+PopoBIND(SERVERSOCKET, PopoInt 1001)
+PopoLISTEN(SERVERSOCKET, PopoInt 1)
+
+PopoPRINT(PopoString "SERVER LISTENING ON PORT 1001")
+
+PopoWHILE yeys:
+    PopoPRINT(PopoString "WAITING FOR CONNECTION...")
+    CONNECTION = PopoACCEPT(SERVERSOCKET)
+    PopoPRINT(PopoSHOUT(PopoString "CONNECTED"))
+    
+    RESPONSE = PopoSHOUT(PopoString "HELLO")
+    PopoSEND(CONNECTION, RESPONSE)
+    
+    PopoPRINT(PopoString "CLOSING CONNECTION")
+PopoDone
+
+PopoPRINT(PopoString "SERVER CLOSED")

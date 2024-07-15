@@ -1,0 +1,18 @@
+{
+  "language_name": "Preksha",
+  "file_extension": ".pk",
+  "command_name": "poporun",
+  "comment_prefix": "PopoSay",
+  "command_prefix": "Popo",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": false,
+  "enforce_uppercase_code": false,
+  "type_prefixes": {
+    "integer": "PopoInt",
+    "float": "PopoFloat",
+    "string": "PopoString"
+  },
+  "block_end": "PopoDone",
+  "true_value": "yeys",
+  "false_value": "naow"
+}

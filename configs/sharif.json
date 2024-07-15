@@ -1,0 +1,18 @@
+{
+  "language_name": "SHARIF",
+  "file_extension": ".sharif",
+  "command_name": "sharifexec",
+  "comment_prefix": "SHARIFSAY",
+  "command_prefix": "SHARIF",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "SHARIFINT",
+    "float": "SHARIFFLOAT",
+    "string": "SHARIFSTRING"
+  },
+  "block_end": "SHARIFEND",
+  "true_value": "YAS",
+  "false_value": "NOO"
+}

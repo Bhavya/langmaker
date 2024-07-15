@@ -1,0 +1,7 @@
+
+PopoSay String manipulation example
+
+NAME = PopoString "FRIEND"
+GREETING = PopoSHOUT(PopoString "Hello, ")
+FULL_GREETING = GREETING + NAME
+PopoPRINT(FULL_GREETING)

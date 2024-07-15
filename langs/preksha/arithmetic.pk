@@ -1,0 +1,15 @@
+
+PopoSay Arithmetic example
+
+A = PopoInt 10
+B = PopoInt 5
+
+SUM = A + B
+DIFFERENCE = A - B
+PRODUCT = A * B
+QUOTIENT = A / B
+
+PopoPRINT(PopoString "SUM:", SUM)
+PopoPRINT(PopoString "DIFFERENCE:", DIFFERENCE)
+PopoPRINT(PopoString "PRODUCT:", PRODUCT)
+PopoPRINT(PopoString "QUOTIENT:", QUOTIENT)

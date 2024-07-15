@@ -1,0 +1,18 @@
+{
+  "language_name": "HYUN",
+  "file_extension": ".hyundo",
+  "command_name": "hyundorun",
+  "comment_prefix": "HYUNNOUNCEMENT",
+  "command_prefix": "HYUN",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "HYUNINT",
+    "float": "HYUNFLOAT",
+    "string": "HYUNSTRING"
+  },
+  "block_end": "HYUNDONE",
+  "true_value": "YESH",
+  "false_value": "NO"
+}

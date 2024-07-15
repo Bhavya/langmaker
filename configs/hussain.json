@@ -1,0 +1,18 @@
+{
+  "language_name": "HUSSAIN",
+  "file_extension": ".baka",
+  "command_name": "hussyrun",
+  "comment_prefix": "HUSSYCOMMENT",
+  "command_prefix": "HUSSY",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "HUSSYINT",
+    "float": "HUSSYFLOAT",
+    "string": "HUSSYSTRING"
+  },
+  "block_end": "HUSSYEND",
+  "true_value": "YUSSY",
+  "false_value": "NUSSY"
+}
