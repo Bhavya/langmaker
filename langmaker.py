@@ -87,6 +87,7 @@ def generate_language(config_file):
 
 def generate_interpreter(lib_dir, config):
     interpreter_code = f"""
+import re
 import sys
 import json
 import socket
@@ -232,13 +233,14 @@ def parse(tokens):
             return BooleanLiteral(tokens.pop(0) == TRUE_VALUE)
         elif tokens[0].startswith('"') and tokens[0].endswith('"'):
             return String(tokens.pop(0)[1:-1])  # Remove quotes
-        elif tokens[0].isalpha():
+        elif re.match(r'^[A-Za-z0-9_]+$', tokens[0]):
             return parse_variable_or_function()
         else:
             try:
-                return Number(float(tokens.pop(0)))
+                token = tokens.pop(0)
+                return Number(float(token))
             except ValueError:
-                raise {config['language_name']}SyntaxError(f"Unexpected token: {{tokens[0]}}")
+                raise {config['language_name']}SyntaxError(f"Unexpected token: {{token}}")
 
     def parse_function_call(name):
         args = []
