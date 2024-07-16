@@ -1,0 +1,21 @@
+
+MatthewComment Server example
+
+SERVERSOCKET = MatthewSOCKET(MatthewString "SERVER")
+MatthewBIND(SERVERSOCKET, MatthewNum 1001)
+MatthewLISTEN(SERVERSOCKET, MatthewNum 1)
+
+MatthewPRINT(MatthewString "SERVER LISTENING ON PORT 1001")
+
+MatthewWHILE facts:
+    MatthewPRINT(MatthewString "WAITING FOR CONNECTION...")
+    CONNECTION = MatthewACCEPT(SERVERSOCKET)
+    MatthewPRINT(MatthewSHOUT(MatthewString "CONNECTED"))
+    
+    RESPONSE = MatthewSHOUT(MatthewString "HELLO")
+    MatthewSEND(CONNECTION, RESPONSE)
+    
+    MatthewPRINT(MatthewString "CLOSING CONNECTION")
+MatthewEnd
+
+MatthewPRINT(MatthewString "SERVER CLOSED")

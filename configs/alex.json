@@ -1,0 +1,18 @@
+{
+  "language_name": "ALEX",
+  "file_extension": ".kleissner",
+  "command_name": "alexec",
+  "comment_prefix": "ALEXCOMMENT",
+  "command_prefix": "ALEX",
+  "case_sensitive": false,
+  "enforce_uppercase_comments": true,
+  "enforce_uppercase_code": true,
+  "type_prefixes": {
+    "integer": "ALEXINT",
+    "float": "ALEXFLOAT",
+    "string": "ALEXSTRING"
+  },
+  "block_end": "ALEXEND",
+  "true_value": "TRUTH",
+  "false_value": "LIES"
+}

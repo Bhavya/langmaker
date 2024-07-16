@@ -1,0 +1,15 @@
+
+MatthewComment Arithmetic example
+
+A = MatthewNum 10
+B = MatthewNum 5
+
+SUM = A + B
+DIFFERENCE = A - B
+PRODUCT = A * B
+QUOTIENT = A / B
+
+MatthewPRINT(MatthewString "SUM:", SUM)
+MatthewPRINT(MatthewString "DIFFERENCE:", DIFFERENCE)
+MatthewPRINT(MatthewString "PRODUCT:", PRODUCT)
+MatthewPRINT(MatthewString "QUOTIENT:", QUOTIENT)

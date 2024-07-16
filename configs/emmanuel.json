@@ -1,0 +1,18 @@
+{
+  "language_name": "EMMANUEL",
+  "file_extension": ".fglsn",
+  "command_name": "emannyrun",
+  "comment_prefix": "EmmanComment",
+  "command_prefix": "Emman",
+  "case_sensitive": true,
+  "enforce_uppercase_comments": false,
+  "enforce_uppercase_code": false,
+  "type_prefixes": {
+    "integer": "EmmanInt",
+    "float": "EmmanFloat",
+    "string": "EmmanString"
+  },
+  "block_end": "EmmanEnd",
+  "true_value": "yes",
+  "false_value": "no"
+}
